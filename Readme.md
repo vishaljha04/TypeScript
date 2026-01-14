@@ -1,5 +1,5 @@
-📘 TypeScript Complete Guide
-A structured, beginner-to-advanced guide to TypeScript — a strongly typed superset of JavaScript that brings static typing, better tooling, and scalability to modern web development.
+#📘 TypeScript Complete Guide #
+##A structured, beginner-to-advanced guide to TypeScript — a strongly typed superset of JavaScript that brings static typing, better tooling, and scalability to modern web development.
 
 🚀 What is TypeScript?
 TypeScript is an open-source language developed by Microsoft that builds on JavaScript by adding static type definitions. It helps catch errors during development, provides better IDE support, and makes large codebases more maintainable.
