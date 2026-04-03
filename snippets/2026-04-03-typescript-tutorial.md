@@ -1,475 +1,650 @@
-# TypeScript Tutorial: Introduction & Fundamentals (Day 6)
+# Mastering the TypeScript Fundamentals: A Deep Dive for Intermediate Developers (Day 7)
 
-Welcome to Day 6 of our TypeScript journey! If you've been following along, you've likely grasped the absolute basics – what TypeScript is, how to set up your environment, and simple type annotations like `string`, `number`, and `boolean`. Today, we're taking a significant step forward, moving beyond the shallow end into the more powerful and nuanced aspects of TypeScript's foundational type system.
+Welcome back to our TypeScript learning series! By now, you've likely navigated the basics of TypeScript, appreciating how it brings static typing and enhanced developer tooling to JavaScript. You understand variable declarations with types, basic functions, and perhaps even simple interfaces. But TypeScript's true power lies in its nuanced type system, offering incredible flexibility and robustness if you know how to wield it.
 
-As an intermediate developer, you know that truly robust applications require more than just primitive types. You need ways to define complex data structures, handle variations in data, and ensure type safety even when dealing with dynamic or uncertain values. This deep dive into TypeScript's core fundamentals will equip you with the tools to write cleaner, more maintainable, and less error-prone code, ultimately boosting your productivity and the reliability of your applications.
+Today, on Day 7, we're moving beyond the introductory examples and diving deeper into the foundational concepts. We'll explore how to leverage TypeScript's core features more effectively, tackle common challenges, and write code that's not just type-safe but also highly readable and maintainable. This session will equip you with the insights needed to confidently build more complex and resilient applications.
 
-In this tutorial, we'll explore type inference, flexible type combinations with unions and literals, structure definition with aliases and interfaces, advanced function typing, the safety of `unknown` over `any`, and how type guards empower runtime type narrowing. Get ready to level up your TypeScript skills and build with confidence!
+Get ready to solidify your understanding of advanced primitives, explore the dynamics of union and intersection types, master function signatures, and unlock the safety net of type guards. Let's transform your foundational knowledge into a mastery of TypeScript's fundamentals!
 
-## Beyond Basic Types: Inference, Union, and Literals
+## Reaffirming the Foundation: Type Annotations and Inference Nuances
 
-While explicit type annotations are a hallmark of TypeScript, the compiler is smart. It can often *infer* types based on the assigned value. Understanding when to rely on inference and when to be explicit is key to writing concise yet robust code.
+While TypeScript excels at inferring types, explicit type annotations remain crucial for clarity, preventing errors, and defining robust API contracts. Let's revisit these concepts with an eye towards their practical application and nuances.
 
-### Type Inference vs. Explicit Typing
+### When to Annotate vs. When to Infer
 
-TypeScript excels at type inference. When you declare a variable and initialize it, TypeScript tries to determine its type automatically.
+TypeScript's type inference is a powerful feature that reduces boilerplate. For simple declarations, it's often best to let TypeScript do its job:
 
 ```typescript
-// Type Inference: TypeScript infers 'message' as string
-let message = "Hello TypeScript!"; 
-// message = 123; // Error: Type 'number' is not assignable to type 'string'.
+// Type inference: `userName` is inferred as `string`
+let userName = "Alice";
 
-// Explicit Typing: We explicitly declare 'age' as number
-let age: number = 30;
-// age = "thirty"; // Error: Type 'string' is not assignable to type 'number'.
+// Type inference: `userAge` is inferred as `number`
+const userAge = 30;
+
+// Type inference: `isActive` is inferred as `boolean`
+var isActive = true;
 ```
 
-**When to use which?**
-*   **Inference**: Prefer inference for straightforward cases where the type is obvious from the initialization. It keeps your code cleaner.
-*   **Explicit**: Use explicit types for:
-    *   **Function parameters and return types**: Crucial for defining the contract of your functions.
-    *   **Variables declared without immediate initialization**: Guarantees type safety from the start.
-    *   **Complex types**: When the inferred type might be too broad or less precise than intended (e.g., an array of mixed types that you intend to be a union).
+However, explicit annotations become vital in several scenarios:
 
-### Union Types: Combining Possibilities
-
-Union types allow a variable to hold one of several different types. This is incredibly useful when a value can legitimately be of multiple types.
+1.  **Function Parameters and Return Types**: Essential for defining clear function contracts.
+2.  **Variables without Immediate Initialization**: TypeScript can't infer a type if there's no initial value.
+3.  **Complex Object Literals or Array Structures**: For improved readability and type precision.
+4.  **API Responses/External Data**: To ensure data conforms to expected structures.
+5.  **Type Narrowing Scenarios**: While type guards handle this, explicit types often inform the guards.
 
 ```typescript
-// A variable that can be either a string or a number
-let id: string | number;
-id = "usr_123"; // Valid
-id = 456789;    // Valid
-// id = true;      // Error: Type 'boolean' is not assignable to type 'string | number'.
-
-function printId(id: string | number) {
-    console.log(`My ID is: ${id}`);
-    // TypeScript knows it's either string or number, but not which one until runtime
-    if (typeof id === "string") {
-        console.log(`ID length: ${id.length}`); // OK, because it's narrowed to string
-    } else {
-        console.log(`ID squared: ${id * id}`); // OK, because it's narrowed to number
-    }
+// 1. Function parameters and return types
+function calculateArea(length: number, width: number): number {
+  return length * width;
 }
 
-printId("abc-123");
-printId(789);
-```
+// 2. Variables without immediate initialization
+let userSettings: { theme: string; notifications: boolean };
+userSettings = { theme: "dark", notifications: true };
 
-### Literal Types: Specific Values as Types
-
-Literal types allow you to specify exact values a variable can hold. Combined with union types, they enable highly precise type definitions.
-
-```typescript
-// A variable that can only be "success", "error", or "pending"
-type RequestStatus = "success" | "error" | "pending";
-
-let currentStatus: RequestStatus;
-currentStatus = "success"; // Valid
-currentStatus = "pending"; // Valid
-// currentStatus = "failed"; // Error: Type '"failed"' is not assignable to type 'RequestStatus'.
-
-function setTrafficLight(color: "red" | "yellow" | "green") {
-    console.log(`Traffic light is now: ${color}`);
+// 3. Complex object literals
+interface Product {
+  id: string;
+  name: string;
+  price: number;
+  tags: string[];
 }
 
-setTrafficLight("green"); // Valid
-// setTrafficLight("blue"); // Error: Type '"blue"' is not assignable to type '"red" | "yellow" | "green"'.
-```
-
-## Structuring Types: Type Aliases and Interfaces
-
-When dealing with objects or complex data structures, TypeScript offers two primary ways to define their shapes: `type` aliases and `interface`s. While often interchangeable, they have distinct features and use cases.
-
-### Type Aliases (`type`)
-
-Type aliases create a new name for a type. This type can be a primitive, a union, a tuple, or an object shape.
-
-```typescript
-// Alias for a primitive type
-type Username = string;
-let myUser: Username = "dev_john";
-
-// Alias for a union type
-type Age = number | string;
-let userAge: Age = 30;
-userAge = "thirty";
-
-// Alias for an object shape
-type Point = {
-    x: number;
-    y: number;
+const newProduct: Product = {
+  id: "P001",
+  name: "Wireless Mouse",
+  price: 25.99,
+  tags: ["electronics", "peripherals"],
 };
-
-function logPoint(p: Point) {
-    console.log(`Point coordinates: (${p.x}, ${p.y})`);
-}
-
-logPoint({ x: 10, y: 20 });
 ```
 
-Type aliases are particularly powerful for complex combinations:
+### Contextual Typing
+
+TypeScript's "contextual typing" is a lesser-known but incredibly useful feature. It occurs when the type of an expression is determined by its location. This is particularly common with function expressions.
 
 ```typescript
-type ID = string | number;
-type User = {
-    id: ID;
-    name: string;
-    email?: string; // Optional property
-};
+type EventCallback = (event: MouseEvent | KeyboardEvent) => void;
 
-type Employee = User & { // Intersection type: User PLUS jobTitle
-    jobTitle: string;
-    department: string;
-};
+function addEventListener(element: HTMLElement, eventName: string, callback: EventCallback) {
+  // ... implementation ...
+}
 
-const admin: Employee = {
-    id: 1,
-    name: "Alice Smith",
-    email: "alice@example.com",
-    jobTitle: "Team Lead",
-    department: "Engineering"
-};
+const myButton = document.getElementById("myButton")!;
 
-console.log(admin);
+addEventListener(myButton, "click", (e) => {
+  // e is contextually typed as MouseEvent | KeyboardEvent,
+  // but since 'click' events usually provide MouseEvent,
+  // TypeScript often narrows it further or expects the user to handle.
+  // In this context, if it were just 'click', e would be MouseEvent.
+  // Let's refine for a clear example:
+});
+
+type ClickHandler = (event: MouseEvent) => void;
+
+function addClickListener(element: HTMLElement, callback: ClickHandler) {
+    element.addEventListener('click', callback);
+}
+
+addClickListener(myButton, (event) => {
+    // `event` is correctly inferred as `MouseEvent` due to contextual typing
+    console.log(event.clientX, event.clientY);
+});
 ```
 
-### Interfaces (`interface`)
+This automatic inference based on context significantly reduces the need for explicit annotations while maintaining type safety.
 
-Interfaces are primarily used to define the shape of objects. They are a contract that an object must adhere to.
+## Beyond Basics: Advanced Primitive and Object Types
 
-```typescript
-interface Person {
-    readonly id: number; // Readonly property
-    firstName: string;
-    lastName: string;
-    age?: number; // Optional property
-    greet?(message: string): void; // Optional method
-}
+While `string`, `number`, `boolean`, `null`, and `undefined` are the bedrock, TypeScript offers several specialized types for more granular control.
 
-const user: Person = {
-    id: 101,
-    firstName: "Jane",
-    lastName: "Doe",
-    greet: (msg) => console.log(`${msg}, I'm Jane.`)
-};
+### `any`, `unknown`, and `never`: The Type Hierarchy's Extremes
 
-user.greet?.("Hello"); // Use optional chaining for optional methods
-// user.id = 102; // Error: Cannot assign to 'id' because it is a read-only property.
+These three types represent different levels of type safety and control.
 
-interface Developer extends Person { // Interface extension
-    skills: string[];
-    yearsOfExperience: number;
-}
+| Type      | Description                                                    | Safety Level         | Common Use Cases                                                                                                |
+| :-------- | :------------------------------------------------------------- | :------------------- | :-------------------------------------------------------------------------------------------------------------- |
+| `any`     | Opts out of type checking. Can be anything.                    | **Lowest**           | Migrating JS projects, interacting with untyped 3rd-party libraries (use sparingly!).                          |
+| `unknown` | Represents any value, but requires type checking before use.   | **High**             | Safely handling external input (e.g., API responses, user input) where type isn't known upfront.               |
+| `never`   | Represents values that will never occur (e.g., unreachable code, functions that always throw). | **Highest** (for unreachable) | Exhaustive checking in `switch` statements, functions that always throw errors or never return.                   |
 
-const developer: Developer = {
-    id: 201,
-    firstName: "Bob",
-    lastName: "Builder",
-    skills: ["TypeScript", "React", "Node.js"],
-    yearsOfExperience: 5
-};
-
-console.log(developer.skills);
-```
-
-**Key Differences and When to Use Which:**
-
-| Feature               | `type` Alias                                | `interface`                                       |
-| :-------------------- | :------------------------------------------ | :------------------------------------------------ |
-| **Declaration Merging** | No                                          | Yes (can be declared multiple times, merged)      |
-| **Extension**         | `&` (intersection types)                    | `extends` keyword                                 |
-| **Implements (Classes)** | Can implement object shapes defined by `type` | Can be implemented by classes (`implements`)      |
-| **Use Cases**         | Primitives, Unions, Tuples, Object Shapes   | Primarily object shapes, class contracts, ambient declarations |
-
-**Recommendation:** For defining object shapes, interfaces are generally preferred due to declaration merging and clearer `extends` syntax. Use type aliases for unions, tuple types, or when you need a single, concise name for any type combination.
-
-## Advanced Function Typing and Enums
-
-Functions are the building blocks of most applications, and TypeScript provides robust ways to define their types. Enums offer a way to define a set of named constants.
-
-### Detailed Function Typing
-
-Beyond basic parameter and return types, TypeScript offers more expressiveness for functions:
+#### `any` - The Escape Hatch (Use with Caution!)
 
 ```typescript
-// Function with optional and default parameters
-function greetUser(name: string, greeting: string = "Hello"): string {
-    return `${greeting}, ${name}!`;
-}
-
-console.log(greetUser("Alice"));          // "Hello, Alice!"
-console.log(greetUser("Bob", "Hi there")); // "Hi there, Bob!"
-
-// Function with rest parameters
-function sumNumbers(...nums: number[]): number {
-    return nums.reduce((total, num) => total + num, 0);
-}
-
-console.log(sumNumbers(1, 2, 3));       // 6
-console.log(sumNumbers(10, 20, 30, 40)); // 100
-
-// Function type expression (for defining function types)
-type MathOperation = (a: number, b: number) => number;
-
-const add: MathOperation = (x, y) => x + y;
-const subtract: MathOperation = (x, y) => x - y;
-
-console.log(add(5, 3));      // 8
-console.log(subtract(10, 4)); // 6
-```
-
-### Enums: Named Constants
-
-Enums provide a way to define a collection of related values, making your code more readable and preventing "magic strings" or numbers.
-
-```typescript
-// Numeric Enum (default starts at 0, or you can assign custom values)
-enum Direction {
-    Up,    // 0
-    Down,  // 1
-    Left,  // 2
-    Right  // 3
-}
-
-let move: Direction = Direction.Up;
-console.log(move); // 0
-console.log(Direction[move]); // "Up" (reverse mapping)
-
-enum StatusCode {
-    NotFound = 404,
-    Success = 200,
-    BadRequest = 400
-}
-
-console.log(StatusCode.NotFound); // 404
-
-// String Enum (better for readability and debugging, no reverse mapping by default)
-enum UserRole {
-    Admin = "ADMIN",
-    Editor = "EDITOR",
-    Viewer = "VIEWER"
-}
-
-function checkPermissions(role: UserRole) {
-    if (role === UserRole.Admin) {
-        console.log("Full access granted.");
-    } else if (role === UserRole.Editor) {
-        console.log("Edit access.");
-    } else {
-        console.log("View-only access.");
-    }
-}
-
-checkPermissions(UserRole.Editor);
-
-// Const Enums: Optimized for performance and bundle size
-// They are completely removed during compilation, replaced by inline values.
-const enum LogLevel {
-    DEBUG,
-    INFO,
-    WARN,
-    ERROR
-}
-
-const currentLogLevel: LogLevel = LogLevel.INFO;
-if (currentLogLevel === LogLevel.INFO) {
-    console.log("Logging at INFO level.");
-}
-
-// Compiled JS for const enum: if (currentLogLevel === 1) { console.log("Logging at INFO level."); }
-// No generated JS object for LogLevel, unlike regular enums.
-```
-
-**Choose `const enum` when:** you don't need reverse mapping or iteration over enum members at runtime, and want the smallest possible generated JavaScript.
-
-## Ensuring Type Safety: `unknown` and Type Guards
-
-One of TypeScript's greatest strengths is preventing common runtime errors related to incorrect types. While `any` can bypass type checking, `unknown` provides a much safer alternative.
-
-### The Problem with `any`
-
-`any` is a powerful escape hatch, telling TypeScript to disable type checking for that variable. While convenient, it defeats the purpose of TypeScript and can hide bugs.
-
-```typescript
-let value: any = "hello";
-value.toUpperCase(); // OK
+let value: any = "Hello";
 value = 123;
-value.toFixed(2); // OK
-value.invalidMethod(); // No compile-time error, will crash at runtime!
+value = { name: "TypeScript" };
+
+// No type checking, potential runtime error!
+console.log(value.toUpperCase()); // Works for "Hello", but fails for 123 or { name: "TypeScript" }
 ```
 
-### Introducing `unknown`: The Safer `any`
-
-`unknown` is similar to `any` in that it can hold any type of value. However, `unknown` enforces type checking before you can perform *any* operations on it. You *must* narrow its type first.
+#### `unknown` - The Safer Alternative
 
 ```typescript
 let data: unknown;
-data = "TypeScript is awesome";
-data = 42;
-data = { name: "Alice" };
 
-// console.log(data.name); // Error: Object is of type 'unknown'.
-// data.toFixed(2);       // Error: Object is of type 'unknown'.
-
-if (typeof data === "object" && data !== null && "name" in data) {
-    // Now TypeScript knows 'data' is an object with a 'name' property
-    console.log((data as { name: string }).name); // Alice
+async function fetchData(): Promise<unknown> {
+  const response = await fetch('/api/data');
+  return await response.json();
 }
 
-// Or using a type assertion after narrowing:
+data = await fetchData();
+
+// You MUST check the type before using it!
 if (typeof data === 'string') {
-  console.log(data.toUpperCase()); // Now OK
+  console.log(data.toUpperCase());
+} else if (typeof data === 'object' && data !== null && 'message' in data) {
+  // More advanced checks
+  console.log((data as { message: string }).message);
+} else {
+  console.log("Data is of an unexpected type.");
 }
 ```
+`unknown` forces you to perform runtime checks, making your code safer and more explicit about type assumptions.
 
-This simple ASCII diagram illustrates the flow:
+#### `never` - For Unreachable Code
 
+```typescript
+function error(message: string): never {
+  throw new Error(message);
+}
+
+function processInput(input: string | number): string | number | never {
+  if (typeof input === 'string') {
+    return `String: ${input}`;
+  } else if (typeof input === 'number') {
+    return `Number: ${input}`;
+  }
+  // This line should technically be unreachable if all cases are covered.
+  // If a new type was added to input and not handled, this would be flagged
+  // as potentially unreachable, reminding you to handle it.
+  return error("Should not reach here!");
+}
+
+function exhaustiveCheck(value: string | number | boolean): string {
+    switch (value) {
+        case 'hello': return 'A string';
+        case 123: return 'A number';
+        // If we add `| boolean` to value, and don't handle boolean here,
+        // the `default` case will infer `value` as `boolean`
+        // and the `never` type will ensure we handle all cases.
+        default:
+            const _exhaustiveCheck: never = value; // Type error if `value` can be `boolean`
+            return 'Unhandled type';
+    }
+}
 ```
-+----------------+
-|    unknown     |
-+----------------+
-      |
-      V
-+----------------+
-| Type Guard?    | <-- Is it safe to operate?
-| (typeof,       |     No? Then operation is forbidden.
-| instanceof,    |     Yes? Then narrow the type.
-| custom guard)  |
-+----------------+
-      | Yes
-      V
-+----------------+
-|   Narrowed     | <-- TypeScript now knows the type and allows operations.
-|     Type       |
-+----------------+
+`never` is particularly useful in exhaustive checking with union types, ensuring that every possible case is handled.
+
+### Literal Types
+
+Literal types allow you to define types that are exact string, number, or boolean values. This is incredibly powerful for creating highly specific type contracts.
+
+```typescript
+type CardinalDirection = "North" | "East" | "South" | "West";
+
+let currentDirection: CardinalDirection = "North";
+// currentDirection = "Northeast"; // Type Error!
+
+type HTTPMethod = "GET" | "POST" | "PUT" | "DELETE";
+
+function makeRequest(url: string, method: HTTPMethod) {
+  // ...
+}
+
+makeRequest("/api/users", "GET");
+// makeRequest("/api/users", "PATCH"); // Type Error!
 ```
 
-### Type Guards: Narrowing Types at Runtime
+### Type Aliases vs. Interfaces
 
-Type guards are special checks that tell TypeScript how to narrow down a type.
+Both `type` aliases and `interface` declarations are used to define the shape of objects or functions. While often interchangeable, they have key differences.
 
-1.  **`typeof` type guard**: Checks for primitive types.
+| Feature         | `interface`                                       | `type` alias                                                      |
+| :-------------- | :------------------------------------------------ | :---------------------------------------------------------------- |
+| **Declaration** | `interface User { ... }`                          | `type User = { ... }`                                             |
+| **Extensibility**| **Declaration merging** (can be re-opened to add members), `extends` keyword. | `&` for intersection (like `extends`), but **no declaration merging**. |
+| **Primitivs**   | Cannot define primitive types.                     | Can define primitive types, union types, tuple types, etc.         |
+| **Tuples**      | Cannot directly define tuple types.                | Can define tuple types: `type MyTuple = [string, number];`       |
+| **Generics**    | Both support generics.                             | Both support generics.                                            |
 
-    ```typescript
-    function processInput(input: string | number) {
-        if (typeof input === "string") {
-            return input.toUpperCase();
-        }
-        return input * 2;
-    }
-    ```
+**General Guideline:**
+*   **Use `interface` for defining object shapes and class implementations.** They are generally preferred for public APIs and library definitions because of declaration merging.
+*   **Use `type` for anything else:** union types, tuple types, primitive aliases, and complex function signatures.
 
-2.  **`instanceof` type guard**: Checks if a value is an instance of a class.
+```typescript
+// Interface Example
+interface Person {
+  name: string;
+  age: number;
+}
 
-    ```typescript
-    class Dog { bark() { console.log("Woof!"); } }
-    class Cat { meow() { console.log("Meow!"); } }
+interface Employee extends Person { // Interface extends interface
+  employeeId: string;
+}
 
-    function makeSound(animal: Dog | Cat) {
-        if (animal instanceof Dog) {
-            animal.bark();
-        } else {
-            animal.meow();
-        }
-    }
+// Declaration Merging (Interfaces only)
+interface Employee {
+  department: string; // Adds 'department' to the Employee interface
+}
 
-    makeSound(new Dog()); // Woof!
-    makeSound(new Cat()); // Meow!
-    ```
+const employee: Employee = {
+  name: "Jane Doe",
+  age: 30,
+  employeeId: "EMP001",
+  department: "Engineering",
+};
 
-3.  **`in` operator type guard**: Checks if an object has a specific property.
+// Type Alias Example
+type Point = {
+  x: number;
+  y: number;
+};
 
-    ```typescript
-    interface Car { drive(): void; }
-    interface Boat { sail(): void; }
+type Coords = [number, number]; // Tuple type via type alias
 
-    function operateVehicle(vehicle: Car | Boat) {
-        if ("drive" in vehicle) {
-            vehicle.drive();
-        } else {
-            vehicle.sail();
-        }
-    }
-    ```
+type Status = "active" | "inactive" | "pending"; // Union type via type alias
 
-4.  **User-Defined Type Guards**: Functions that return a boolean and tell TypeScript about the type. The return type signature `param is Type` is crucial.
+type AdminUser = Person & {
+  role: "admin";
+}; // Intersection type via type alias
 
-    ```typescript
-    interface Admin {
-        name: string;
-        roles: string[];
-    }
-    interface User {
-        name: string;
-    }
+const admin: AdminUser = {
+  name: "Super Admin",
+  age: 45,
+  role: "admin",
+};
+```
 
-    // This is a user-defined type guard
-    function isAdmin(person: Admin | User): person is Admin {
-        return (person as Admin).roles !== undefined;
-    }
+## Mastering Functions in TypeScript
 
-    function displayUser(person: Admin | User) {
-        if (isAdmin(person)) {
-            console.log(`${person.name} is an Admin with roles: ${person.roles.join(", ")}`);
-        } else {
-            console.log(`${person.name} is a regular User.`);
-        }
-    }
+Functions are core to JavaScript, and TypeScript supercharges them with robust type safety features.
 
-    displayUser({ name: "Charlie", roles: ["SUPER_ADMIN", "AUDITOR"] });
-    displayUser({ name: "David" });
-    ```
+### Function Overloads
+
+Function overloads allow you to define multiple function signatures for a single function implementation. This is incredibly useful when a function can accept different argument types or numbers of arguments, but always performs a similar logical operation.
+
+```typescript
+// Overload Signatures (no implementation)
+function add(a: number, b: number): number;
+function add(a: string, b: string): string;
+function add(a: number, b: string): string; // Example of mixed types
+function add(a: string, b: number): string;
+
+// Single Implementation Signature
+function add(a: any, b: any): any {
+  if (typeof a === 'string' || typeof b === 'string') {
+    return a.toString() + b.toString();
+  }
+  return a + b;
+}
+
+console.log(add(1, 2));      // Output: 3 (number)
+console.log(add("Hello", "World")); // Output: HelloWorld (string)
+console.log(add(5, "users")); // Output: 5users (string)
+console.log(add("Count: ", 10)); // Output: Count: 10 (string)
+// console.log(add(true, false)); // Type Error: No overload matches this call
+```
+**Important:** The implementation signature (the one with `any` types in this example) is not callable directly. It only serves to connect the overload signatures to the actual function logic.
+
+### Rest Parameters and Spread Syntax with Typing
+
+TypeScript provides excellent support for rest parameters in function signatures and spread syntax.
+
+```typescript
+// Rest Parameters
+function sum(...numbers: number[]): number {
+  return numbers.reduce((total, num) => total + num, 0);
+}
+
+console.log(sum(1, 2, 3)); // Output: 6
+console.log(sum(10, 20, 30, 40, 50)); // Output: 150
+
+// Spread Syntax
+interface UserProfile {
+  id: string;
+  name: string;
+  email: string;
+  isActive: boolean;
+}
+
+const defaultProfile: UserProfile = {
+  id: "temp",
+  name: "Guest",
+  email: "guest@example.com",
+  isActive: false,
+};
+
+function createUserProfile(overrides: Partial<UserProfile>): UserProfile {
+  return { ...defaultProfile, ...overrides };
+}
+
+const adminProfile = createUserProfile({
+  id: "ADMIN_001",
+  name: "System Admin",
+  isActive: true,
+});
+
+console.log(adminProfile);
+// Output: { id: 'ADMIN_001', name: 'System Admin', email: 'guest@example.com', isActive: true }
+```
+Here, `Partial<UserProfile>` is a utility type that makes all properties of `UserProfile` optional, allowing us to spread overrides safely.
+
+## Empowering Flexibility: Union, Intersection, and Type Guards
+
+These features are fundamental for handling data that can have multiple forms or combine multiple structures.
+
+### Union Types (`|`)
+
+A union type allows a variable to hold values of several types.
+
+```typescript
+type ID = number | string;
+
+function printID(id: ID) {
+  console.log(`Your ID is: ${id}`);
+}
+
+printID(101);
+printID("202ABC");
+
+// printID({ myID: 303 }); // Type Error: Argument of type '{ myID: number; }' is not assignable to parameter of type 'ID'.
+```
+
+### Intersection Types (`&`)
+
+An intersection type combines multiple types into one. The new type has all the properties of the combined types.
+
+```typescript
+interface HasName {
+  name: string;
+}
+
+interface HasEmail {
+  email: string;
+}
+
+interface HasPhone {
+  phone: string;
+}
+
+type ContactInfo = HasName & HasEmail & HasPhone;
+
+const customer: ContactInfo = {
+  name: "John Doe",
+  email: "john@example.com",
+  phone: "555-1234",
+};
+
+// const incompleteContact: ContactInfo = { name: "Jane" }; // Type Error: Missing 'email' and 'phone'
+```
+Intersection types are powerful for creating highly specific types by composing existing ones.
+
+### Type Guards: Narrowing Types for Safer Code
+
+When working with union types, TypeScript needs to know which specific type you're dealing with at a given point to allow access to type-specific properties. Type guards provide this mechanism.
+
+#### 1. `typeof` Type Guard
+
+Works for primitive types (`string`, `number`, `boolean`, `symbol`, `bigint`, `undefined`, `object`, `function`).
+
+```typescript
+function printLength(input: string | number) {
+  if (typeof input === 'string') {
+    console.log(`Length of string: ${input.length}`); // `input` is now `string`
+  } else {
+    console.log(`Value is a number: ${input}`); // `input` is now `number`
+    // console.log(`Length of number: ${input.length}`); // Type Error: Property 'length' does not exist on type 'number'.
+  }
+}
+
+printLength("Hello");
+printLength(12345);
+```
+
+#### 2. `instanceof` Type Guard
+
+Works for classes and objects created with constructors.
+
+```typescript
+class Dog {
+  bark() { console.log("Woof!"); }
+}
+
+class Cat {
+  meow() { console.log("Meow!"); }
+}
+
+function makeSound(animal: Dog | Cat) {
+  if (animal instanceof Dog) {
+    animal.bark(); // `animal` is now `Dog`
+  } else {
+    animal.meow(); // `animal` is now `Cat`
+  }
+}
+
+makeSound(new Dog());
+makeSound(new Cat());
+```
+
+#### 3. Property Checking (`in`) Type Guard
+
+Useful for distinguishing between object types based on the presence of a specific property.
+
+```typescript
+interface Car {
+  drive(): void;
+  brand: string;
+}
+
+interface Boat {
+  sail(): void;
+  shipName: string;
+}
+
+function operateVehicle(vehicle: Car | Boat) {
+  if ('drive' in vehicle) { // `vehicle` is now `Car`
+    vehicle.drive();
+    console.log(`Driving a ${vehicle.brand}`);
+  } else { // `vehicle` is now `Boat`
+    vehicle.sail();
+    console.log(`Sailing on the ${vehicle.shipName}`);
+  }
+}
+
+operateVehicle({ drive: () => {}, brand: "Tesla" });
+operateVehicle({ sail: () => {}, shipName: "Titanic" });
+```
+
+#### 4. User-Defined Type Guards
+
+You can create your own type guard functions that return a boolean and tell TypeScript how to narrow a type. These functions have a special return type called a "type predicate": `parameterName is Type`.
+
+```typescript
+interface ApiResponse {
+  status: "success" | "error";
+  data?: any;
+  errorMessage?: string;
+}
+
+interface SuccessResponse extends ApiResponse {
+  status: "success";
+  data: { userId: string; token: string };
+}
+
+interface ErrorResponse extends ApiResponse {
+  status: "error";
+  errorMessage: string;
+}
+
+// User-defined type guard
+function isSuccessResponse(response: ApiResponse): response is SuccessResponse {
+  return response.status === "success" && response.data !== undefined;
+}
+
+function processResponse(response: ApiResponse) {
+  if (isSuccessResponse(response)) {
+    // TypeScript now knows 'response' is a SuccessResponse
+    console.log(`Login successful for user: ${response.data.userId}`);
+    console.log(`Auth Token: ${response.data.token}`);
+  } else {
+    // TypeScript now knows 'response' is an ErrorResponse (or just ApiResponse if not fully discriminated)
+    console.error(`Error: ${response.errorMessage || "Unknown error"}`);
+  }
+}
+
+processResponse({ status: "success", data: { userId: "user123", token: "xyzabc" } });
+processResponse({ status: "error", errorMessage: "Invalid credentials" });
+processResponse({ status: "success" }); // No data, so it will fall into error path here (as designed by isSuccessResponse)
+```
+User-defined type guards are incredibly powerful for creating robust and custom type narrowing logic.
 
 ## Real-World Use Cases
 
-These fundamental concepts are not just academic; they form the backbone of robust applications:
+Applying these fundamentals can dramatically improve the reliability and maintainability of your applications.
 
-1.  **API Response Handling**:
-    *   **Union Types & Type Guards**: An API might return data or an error object. You can type this as `UserResponse | ErrorResponse` and use `if ('errorMessage' in response)` as a type guard to handle each case gracefully.
-    *   **Literal Types**: Define valid API endpoints or HTTP methods: `type HttpMethod = "GET" | "POST" | "PUT" | "DELETE";`
-2.  **Configuration Objects**:
-    *   **Type Aliases/Interfaces**: Define complex configuration objects for libraries or services, ensuring all necessary properties are present and correctly typed.
-    *   **Optional Properties (`?`)**: Allows some configuration options to be truly optional without requiring explicit `undefined`.
-3.  **Event Handling**:
-    *   **Enums**: Define a set of event types (e.g., `enum EventType { Click, Hover, Submit }`).
-    *   **Union Types**: For an event handler that can receive different event objects: `(event: MouseEvent | KeyboardEvent)` and use `instanceof` to distinguish.
-4.  **Input Validation**:
-    *   **`unknown` & Type Guards**: When parsing JSON or receiving input from external sources (e.g., user input, file uploads), treat it as `unknown`. Then, use type guards (`typeof`, `in`, or custom guards) to safely validate and narrow its type before processing. This prevents runtime crashes from unexpected data shapes.
+1.  **Strict API Response Handling**: Use `unknown` for raw API responses, then validate and cast to specific interfaces using type guards.
+    ```typescript
+    interface UserApiData {
+      id: string;
+      name: string;
+      email: string;
+    }
+
+    function isUserApiData(data: unknown): data is UserApiData {
+      return (
+        typeof data === 'object' &&
+        data !== null &&
+        'id' in data && typeof data.id === 'string' &&
+        'name' in data && typeof data.name === 'string' &&
+        'email' in data && typeof data.email === 'string'
+      );
+    }
+
+    async function fetchUser(userId: string): Promise<UserApiData | null> {
+      try {
+        const response = await fetch(`/api/users/${userId}`);
+        const rawData: unknown = await response.json();
+
+        if (isUserApiData(rawData)) {
+          return rawData;
+        } else {
+          console.error("Received unexpected data structure for user:", rawData);
+          return null;
+        }
+      } catch (error) {
+        console.error("Failed to fetch user:", error);
+        return null;
+      }
+    }
+    ```
+2.  **Configuration Objects with Defaults**: Leverage intersection types and optional properties for flexible configuration.
+    ```typescript
+    interface BaseConfig {
+      port: number;
+      logLevel: "info" | "warn" | "error";
+    }
+
+    interface DatabaseConfig {
+      databaseUrl: string;
+      maxConnections?: number;
+    }
+
+    type AppConfig = BaseConfig & DatabaseConfig;
+
+    const defaultConfig: AppConfig = {
+      port: 3000,
+      logLevel: "info",
+      databaseUrl: "mongodb://localhost:27017/appdb",
+      maxConnections: 10,
+    };
+
+    function initializeApp(config: Partial<AppConfig>): AppConfig {
+      return { ...defaultConfig, ...config };
+    }
+
+    const myAppConfig = initializeApp({ port: 8080, logLevel: "warn" });
+    console.log(myAppConfig);
+    // Output: { port: 8080, logLevel: 'warn', databaseUrl: 'mongodb://localhost:27017/appdb', maxConnections: 10 }
+    ```
+3.  **Event Handling with Discriminated Unions**: Combine union types with literal properties for robust event handling.
+
+    ```typescript
+    interface ClickEvent {
+      type: "click";
+      x: number;
+      y: number;
+    }
+
+    interface KeyboardEvent {
+      type: "keydown" | "keyup";
+      key: string;
+    }
+
+    type AppEvent = ClickEvent | KeyboardEvent;
+
+    function handleAppEvent(event: AppEvent) {
+      switch (event.type) {
+        case "click":
+          console.log(`Clicked at (${event.x}, ${event.y})`);
+          break;
+        case "keydown":
+        case "keyup":
+          console.log(`Key ${event.key} was pressed/released.`);
+          break;
+        default:
+          // This ensures exhaustive checking. If a new event type is added to AppEvent
+          // and not handled here, TypeScript will flag an error.
+          const _exhaustiveCheck: never = event;
+          throw new Error("Unknown event type");
+      }
+    }
+
+    handleAppEvent({ type: "click", x: 100, y: 200 });
+    handleAppEvent({ type: "keydown", key: "Enter" });
+    ```
 
 ## Common Pitfalls & Best Practices
 
-### Pitfalls
+### Common Pitfalls
 
-1.  **Over-reliance on `any`**: The quickest way to lose TypeScript's benefits. It bypasses all checks.
-2.  **Ignoring Type Inference**: Explicitly typing everything, even obvious cases, can make code verbose without adding significant value.
-3.  **Confusing `type` and `interface`**: While often similar, using the wrong one for specific scenarios (like needing declaration merging) can lead to unexpected behavior or limitations.
-4.  **Misusing Numeric Enums**: Numeric enums can have tricky reverse mappings (`Direction[0]` gives `"Up"`). String enums are generally safer and more readable. `const enum` is even better if you don't need runtime objects.
-5.  **Forgetting `null` and `undefined`**: By default, TypeScript allows `null` and `undefined` in variables (unless `strictNullChecks` is enabled, which it should be!). Always consider them in your union types, e.g., `string | null`.
+*   **Over-reliance on `any`**: While `any` can be a quick fix, it defeats the purpose of TypeScript. It's often better to start with `unknown` and narrow it down.
+*   **Ignoring `null` and `undefined`**: Without `strictNullChecks` enabled, TypeScript can't catch potential `null` or `undefined` issues, leading to runtime errors.
+*   **Not using type guards**: When working with union types, failing to use type guards leads to `Property 'x' does not exist on type 'TypeA | TypeB'` errors or incorrect assumptions.
+*   **Confusing `type` and `interface`**: While often similar, understanding their differences (especially declaration merging) is crucial for scalable projects.
+*   **Shadowing native types**: Naming a custom type `String` or `Number` can cause confusion.
 
 ### Best Practices
 
-1.  **Enable `strict` mode**: This is the single most important setting (`tsconfig.json`). It enables `noImplicitAny`, `strictNullChecks`, `strictFunctionTypes`, and more, catching many common errors.
-2.  **Prefer `unknown` over `any`**: Whenever you can't determine a type, use `unknown`. It forces you to perform runtime checks, leading to safer code.
-3.  **Leverage Type Inference**: Let TypeScript do the work for simple assignments. Reserve explicit types for function signatures, complex objects, and variables initialized without a value.
-4.  **Use `interface` for object shapes, `type` for unions/tuples/complex combinations**: This provides a good separation of concerns and leverages the strengths of each.
-5.  **Be mindful of optional properties/parameters**: Use `?` judiciously, and always handle potentially `undefined` values (e.g., with optional chaining `?.` or nullish coalescing `??`).
-6.  **Write User-Defined Type Guards**: For complex objects where `typeof` or `instanceof` isn't enough, custom type guards are powerful for narrowing types.
-7.  **Use String or `const` Enums**: For better readability, debugging, and potentially smaller bundles, prefer string enums or `const` enums over basic numeric enums.
+*   **Enable `strict` mode in `tsconfig.json`**: This enables `strictNullChecks`, `noImplicitAny`, `strictFunctionTypes`, and other crucial checks that drastically improve type safety.
+*   **Prefer `unknown` over `any`**: When dealing with data of an uncertain type, use `unknown` to force explicit type checks before usage.
+*   **Use explicit types for function parameters and return values**: This forms clear contracts, improves readability, and aids documentation.
+*   **Leverage Type Guards**: Use `typeof`, `instanceof`, `in`, and custom type guards to safely narrow down union types.
+*   **Favor `interface` for object shapes and `type` for unions/primitives/tuples**: This is a widely adopted convention that improves consistency.
+*   **Use Literal Types for constrained values**: This makes your types more precise and catches errors early.
+*   **Implement Discriminant Unions for complex state or event handling**: This pattern, combined with `switch` statements, ensures exhaustive type checking and safer code.
+*   **Always annotate complex array types**: `string[]` is clear, `Array<string>` is also clear. Avoid `any[]`.
+*   **Consider Readonly types**: Use `readonly` modifier for properties or `ReadonlyArray<T>` for arrays that should not be mutated.
 
 ## Summary
 
-*   **Type Inference** allows TypeScript to deduce types, promoting cleaner code, while **Explicit Typing** is crucial for contracts (like function signatures) and complex types.
-*   **Union Types** (`TypeA | TypeB`) enable variables to hold one of several types, and **Literal Types** (`"specificValue"`) constrain variables to exact values.
-*   **Type Aliases (`type`)** are versatile, allowing you to name any type, including primitives, unions, and object shapes. **Interfaces (`interface`)** are primarily for object shapes, benefiting from declaration merging and clear `extends` syntax.
-*   **Functions** can be typed with optional parameters, default values, rest parameters, and their own type expressions. **Enums** (`enum`) provide named constants, with **String Enums** offering better readability and **`const` Enums** optimized for bundle size.
-*   **`unknown`** is a safer alternative to `any`, requiring **Type Guards** (`typeof`, `instanceof`, `in`, user-defined guards) to narrow its type before operations, preventing runtime errors.
-*   **Best practices** include enabling `strict` mode, preferring `unknown`, using inference wisely, and choosing the right type definition (`type` vs `interface`) for the job.
+Today, we've strengthened our understanding of TypeScript's fundamental type system. We've explored:
 
-By mastering these fundamental concepts, you're not just writing TypeScript; you're writing *better*, safer, and more maintainable code that truly harnesses the power of a static type system. Keep building, keep exploring!
+*   **Nuances of Type Annotations and Inference**: When and why to explicitly type your code.
+*   **Advanced Primitive Types (`any`, `unknown`, `never`)**: Understanding their roles and using them judiciously for type safety.
+*   **Literal Types**: Creating highly specific types for exact values.
+*   **Type Aliases vs. Interfaces**: Deciding which to use based on extensibility, capabilities, and common conventions.
+*   **Robust Function Typing**: Leveraging function overloads and rest parameters for flexible yet type-safe functions.
+*   **Flexible Typing with Union and Intersection Types**: Combining types to represent complex data structures.
+*   **Type Guards**: Safely narrowing down types using `typeof`, `instanceof`, `in`, and user-defined type predicates.
+*   **Real-World Application**: How these concepts translate into production-ready code for API handling, configurations, and events.
+*   **Common Pitfalls and Best Practices**: Guidelines for writing clean, maintainable, and error-resistant TypeScript.
 
-Tags: `typescript tutorial` `typescript fundamentals` `type inference` `union types` `literal types` `type aliases` `interfaces` `enums` `unknown` `type guards` `javascript` `web development`
+By mastering these core fundamentals, you're now better equipped to write sophisticated, robust, and maintainable TypeScript applications. Keep practicing, and you'll find these tools invaluable in your development workflow.
+
+Tags: `typescript tutorial` `typescript fundamentals` `type safety` `type guards` `union types` `intersection types` `type aliases` `interfaces` `any unknown never` `typescript best practices` `developer blog`
 
 ---
 
-> **Auto-generated by GitHub Growth Engine** | Topic: typescript tutorial | Day 6 | Phase: Introduction & Fundamentals | Difficulty: intermediate
+> **Auto-generated by GitHub Growth Engine** | Topic: typescript tutorial | Day 7 | Phase: Introduction & Fundamentals | Difficulty: intermediate
